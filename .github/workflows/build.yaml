@@ -24,13 +24,36 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+          run_install: false
+      
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      
+      - name: Install dependencies
+        run: pnpm install
+      
       - run: |
-          npm i -g pnpm
-          pnpm i
           pnpm build --release-branch=${{ github.ref_name }} --build-minify
           pnpm test
+          
       - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,6 +64,7 @@ jobs:
           prerelease: false
           
       - name: Purge CDN cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
             curl https://purge.jsdelivr.net/gh/C0C0B01/pupu-build-infos@${{ github.ref_name }}/pupu.js
 
