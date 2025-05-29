@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -61,6 +61,16 @@ jobs:
           release_name: Release v${{ github.run_number }}
           draft: false
           prerelease: false
+      - name: Push Build to dist
+        run: |
+            rm $GITHUB_WORKSPACE/builds/* || true
+            cp -r dist/* $GITHUB_WORKSPACE/builds || true
+            cd $GITHUB_WORKSPACE/builds
+            git config --local user.email "actions@github.com"
+            git config --local user.name "GitHub Actions"
+            git add .
+            git commit -m "Build $GITHUB_SHA" || exit 0
+            git push
           
       - name: Purge CDN cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
