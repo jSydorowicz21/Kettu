@@ -63,7 +63,7 @@ jobs:
           prerelease: false
       - name: Push Build to dist
         run: |
-            rm $GITHUB_WORKSPACE/builds/* || true
+            rm -rf $GITHUB_WORKSPACE/builds/* 2>/dev/null || true
             cp -r dist/* $GITHUB_WORKSPACE/builds || true
             cd $GITHUB_WORKSPACE/builds
             git config --local user.email "actions@github.com"
