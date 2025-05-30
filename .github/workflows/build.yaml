@@ -64,6 +64,7 @@ jobs:
       - name: Push Build to dist
         run: |
             rm -rf $GITHUB_WORKSPACE/builds/* 2>/dev/null || true
+            mkdir -p $GITHUB_WORKSPACE/builds
             cp -r dist/* $GITHUB_WORKSPACE/builds || true
             cd $GITHUB_WORKSPACE/builds
             git config --local user.email "actions@github.com"
@@ -72,10 +73,10 @@ jobs:
             git commit -m "Build $GITHUB_SHA" || exit 0
             git push
           
-      - name: Purge CDN cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-            curl https://purge.jsdelivr.net/gh/C0C0B01/pupu-build-infos@${{ github.ref_name }}/pupu.js
+      # - name: Purge CDN cache
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      #   run: |
+      #       curl https://purge.jsdelivr.net/gh/C0C0B01/pupu-build-infos@${{ github.ref_name }}/pupu.js
 
 
       
