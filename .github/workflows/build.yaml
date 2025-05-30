@@ -1,6 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-name: Node.js CI
+name: Node.js CI / CD
 
 on:
   push:
@@ -61,18 +59,35 @@ jobs:
           release_name: Release v${{ github.run_number }}
           draft: false
           prerelease: false
-      - name: Push Build to dist
+          
+      - name: Push JS files to dist branch
         run: |
-            rm -rf $GITHUB_WORKSPACE/builds/* 2>/dev/null || true
-            mkdir -p $GITHUB_WORKSPACE/builds
-            cp -r dist/* $GITHUB_WORKSPACE/builds || true
-            cd $GITHUB_WORKSPACE/builds
+            # Configure git
             git config --local user.email "actions@github.com"
             git config --local user.name "GitHub Actions"
-            git add .
-            git commit -m "Build $GITHUB_SHA" || exit 0
-            git push
-          
+            
+            # Create a temporary directory for the dist branch
+            mkdir -p temp_dist
+            
+            # Copy only JS files from dist/ to temp directory
+            find dist -name "*.js" -exec cp {} temp_dist/ \;
+            
+            # Create and checkout dist branch
+            git checkout --orphan dist-temp
+            git rm -rf --cached .
+            
+            # Move the JS files to the root
+            cp -r temp_dist/* .
+            rm -rf temp_dist
+            
+            # Add, commit and push to dist branch
+            git add *.js
+            git commit -m "Update build $GITHUB_SHA" || exit 0
+            git push -f origin HEAD:dist
+            
+            # Return to the original branch
+            git checkout -f ${GITHUB_REF#refs/heads/}
+
       # - name: Purge CDN cache
       #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       #   run: |
